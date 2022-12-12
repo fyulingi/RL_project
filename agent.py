@@ -1,5 +1,5 @@
 from MCTS import *
-from mentor import *
+from strategy.mentor import *
 import torch
 from model import *
 
