@@ -5,16 +5,13 @@ import time
 import threading
 
 class Node:
-
     def __init__(self, p_prior, parent, color):
-
         """
         Parameters:
         -----------
         p_prior: float, prior probability for its parent to choose this move
         parent: Node, its parent node
         color: +1 or -1, which color to move at this moment
-
         """
 
         self.N = 0
@@ -28,7 +25,6 @@ class Node:
         self.select_num = 0
 
     def compute_UCB(self, c_puct):
-
         """
         Parameters:
         -----------
@@ -37,13 +33,11 @@ class Node:
         Returns:
         --------
         UCB value of the edge linked between self and its parents
-
         """
 
         return self.Q + (c_puct * self.P * sqrt(self.parent.N) / (1 + self.N) if self.parent is not None else 0)
 
     def select(self, c_puct, legal_moves):
-
         """
         Parameters:
         -----------
@@ -66,19 +60,16 @@ class Node:
                 return self.children[action], action
     
     def expand(self, p_prior):
-
         """
         Parameters:
         -----------
         p_prior: 225-d vector, prior probabilities to choose each move
-        
         """
 
         assert not self.is_end and not self.children
         self.children = [Node(p_prior[i], self, -self.color) for i in range(225)]
 
     def backup(self, value, gamma, use_virtual=False):
-
         """
         Parameters:
         -----------

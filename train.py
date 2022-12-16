@@ -5,13 +5,13 @@ import torch
 import torch.optim as optim
 from utils import printboard
 
-def mentorai_selfplay(path, num_games, verbose=True):
 
+def mentorai_selfplay(path, num_games, verbose=True):
     agent = MentorAgent(1)
     agent.self_play_and_save(path, num_games, verbose)
-    
-def train_net(color, netpath, version, datapath, epochs, device, savepath):
 
+
+def train_net(color, netpath, version, datapath, epochs, device, savepath):
     config = {'color': color, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32, 'path': netpath, 'version': version}
     model = GomokuNet(config)
     optimizer = optim.SGD(model.parameters(), lr=model.learning_rate, momentum=model.momentum, weight_decay=model.l2, nesterov=True)
@@ -23,10 +23,9 @@ def train_net(color, netpath, version, datapath, epochs, device, savepath):
     train_data.p = train_data.p[:25600]
     train_data.z = train_data.z[:25600]
     print(f"loss: {train_GomokuNet(model, optimizer, train_data, epochs, device)}")
-    torch.save(model.state_dict(), savepath + f'/version_{version + 1}.hyt')
+    torch.save(model.state_dict(), savepath + f'/version_{version + 1}.model')
 
 def MCTS_vs_mentor(path, version):
-
     ai_mcts = MCTSAgent({'c_puct': 5, 'simulation_times': 1600, 'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95}, path, version, 1, 6)
     ai_mentor = MentorAgent(1)
 
@@ -50,7 +49,6 @@ def MCTS_vs_mentor(path, version):
             mentor_win += 1
         elif res == "whitewin":
             mcts_win += 1
-
     print(f"MCTS wins {mcts_win}, loses {mentor_win}.")
 
     
@@ -88,15 +86,15 @@ if __name__ == "__main__":
     # A = torch.load("./gamedata/mentor/white/z_record.hyt")
     # print((A > 0).sum(), (A == 0).sum(), (A < 0).sum())
 
-    # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    # train_net(1, "./models/black", 2, "./gamedata/mentor/black", 50, device, "./models/black")
-    # train_net(-1, "./models/white", 2, "./gamedata/mentor/white", 50, device, "./models/white")
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    train_net(1, "./models/black", -1, "./gamedata/enhanced/black", 50, device, "./models/black")
+    train_net(-1, "./models/white", -1, "./gamedata/enhanced/white", 50, device, "./models/white")
 
     # MCTS_vs_mentor("./models", 0)
 
-    ai_mcts = MCTSAgent({'c_puct': 5, 'simulation_times': 1600, 'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95, 'num_threads': 8}, './models1', 0, 1, 6, torch.device('cuda'))
-    ai_mentor = MentorAgent(1)
-    print(ai_playing(ai_mcts, ai_mentor, True))
+    # ai_mcts = MCTSAgent({'c_puct': 5, 'simulation_times': 1600, 'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95, 'num_threads': 8}, './models1', 0, 1, 6, torch.device('cuda'))
+    # ai_mentor = MentorAgent(1)
+    # print(ai_playing(ai_mcts, ai_mentor, True))
 
     # ai_mcts = MCTSAgent({'c_puct': 5, 'simulation_times': 1600, 'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95, 'num_threads': 8}, './models1', 0, -1, 6, torch.device('cuda'))
     # ai_mentor = MentorAgent(1)

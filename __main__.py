@@ -2,6 +2,7 @@ import json
 import numpy as np
 from strategy.random_place import randplace
 from strategy import mentor
+from strategy import MCTS
 
 SIZE = 15
 
@@ -38,5 +39,10 @@ if __name__ == '__main__':
     # score-based, not-learning
     agent = mentor.Mentorai(color, board)
     x, y = agent.action()
+
+    # MCTS
+    # ai_mcts = MCTSAgent({'c_puct': 5, 'simulation_times': 1600, 'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95, 'num_threads': 8}, './models1', 0, 1, 6, torch.device('cuda'))
+    # ai_mentor = MentorAgent(1)
+    # print(ai_playing(ai_mcts, ai_mentor, True))
 
     print(json.dumps({"response": {"x": x, "y": y}}))

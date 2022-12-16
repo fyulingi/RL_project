@@ -3,41 +3,36 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-class BN_Conv2d(nn.Module):
 
+class BN_Conv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, dilation=1, groups=1, bias=True):
-        
         super().__init__()
         self.seq = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups, bias=bias),
-            nn.BatchNorm2d(out_channels)
-        )
+            nn.BatchNorm2d(out_channels))
     
     def forward(self, x):
-
         return F.relu(self.seq(x))
 
+
 class ResidualBlock(nn.Module):
-
     def __init__(self, in_channels):
-
         super().__init__()
-        self.conv1 = BN_Conv2d(in_channels, 32, 3, 1, 1)
-        self.conv2 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn3 = nn.BatchNorm2d(32)
+        self.conv = nn.Conv2d(in_channels, 32, kernel_size=3, stride=1, padding=1)
+        self.bn = nn.BatchNorm2d(32)
+        # self.conv1 = BN_Conv2d(in_channels, 32, 3, 1, 1)
+        # self.conv2 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
+        # self.bn3 = nn.BatchNorm2d(32)
 
     def forward(self, x):
-
-        out = self.conv1(x)
-        out = self.conv2(out)
-        out = self.bn3(out)
+        out = self.conv(x)
+        out = self.bn(out)
         out = out + x
         return F.relu(out)
 
+
 class GomokuNet(nn.Module):
-
     def __init__(self, conf):
-
         super().__init__()
         self.color = conf['color']
         self.learning_rate = conf['learning_rate']
@@ -48,9 +43,14 @@ class GomokuNet(nn.Module):
         self.start_version = conf['version']
         
         self.conv1 = BN_Conv2d(3, 32, 3, 1, 1)
+        self.conv2 = BN_Conv2d(32, 32, 3, 1, 1)
+        self.res1 = ResidualBlock(32)
+        self.conv3 = BN_Conv2d(32, 32, 3, 1, 1)
         self.res2 = ResidualBlock(32)
-        self.res3 = ResidualBlock(32)
-        self.res4 = ResidualBlock(32)
+
+        # self.res2 = ResidualBlock(32)
+        # self.res3 = ResidualBlock(32)
+        # self.res4 = ResidualBlock(32)
 
         self.policyhead5 = BN_Conv2d(32, 2, 1, 1, 0)
         self.policyhead_fc6 = nn.Linear(450, 225)
@@ -63,11 +63,14 @@ class GomokuNet(nn.Module):
             self.load_state_dict(torch.load(self.load_path + f"/version_{self.start_version}.hyt"))
 
     def forward(self, x):
-
         out = self.conv1(x)
+        out = self.conv2(out)
+        out = self.res1(out)
+        out = self.conv3(out)
         out = self.res2(out)
-        out = self.res3(out)
-        out = self.res4(out)
+        # out = self.res2(out)
+        # out = self.res3(out)
+        # out = self.res4(out)
 
         policy = self.policyhead5(out)
         policy = policy.view(policy.size(0), -1)
@@ -84,7 +87,6 @@ class GomokuNet(nn.Module):
         return policy, value
 
     def predict(self, board, last_move):
-
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         layer1 = np.array(np.array(board) == self.color, dtype=np.float).reshape(15, 15)
         layer2 = np.array(np.array(board) == -self.color, dtype=np.float).reshape(15, 15)
@@ -96,7 +98,8 @@ class GomokuNet(nn.Module):
             input = torch.from_numpy(input).unsqueeze(0).to(device=device, dtype=torch.float32)
             policy, value = self(input)
             return policy[0,:].detach().cpu().numpy(), value[0,0].detach().cpu().numpy()
-    
+
+
 def train_GomokuNet(model, optimizer, train_data, epochs, device, print_every=100):
 
     model = model.to(device=device)
