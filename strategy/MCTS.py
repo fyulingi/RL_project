@@ -31,8 +31,24 @@ class MCTS:
         self.stochastic_steps = config['stochastic_steps']
         self._expanding_list = []
 
+    def expand_one_node_determined(self, node, x, y):
+        new_node = Node(1, node, -node.color, x*15+y)
+        node.children.append(new_node)
+
+    def move_one_step(self, x, y, color):
+        if len(self.root.children) == 0:
+            self.expand_one_node_determined(self.root, x, y)
+        for child in self.root.children:
+            if child.move == x*15+y:
+                self.root = child
+                self.root.N += 1
+                self.last_move = x*15+y
+                return
+        raise RuntimeError("Invalid move.")
+
     def update_root(self, move_x, move_y):
         action = move_x * 15 + move_y
+        # todo: if child is empty list
         for child in self.root.children:
             if child.move == action:
                 self.root = child
@@ -64,37 +80,9 @@ class MCTS:
         elif game_result == "unfinished":
             p_prior, v = self.get_p_prior_v(board, -node.color, node.move)
             node.backup(v, self.gamma)
-            node.expand(board, p_prior, legal_moves)
+            node.expand(p_prior, legal_moves)
         else:  # the color of an ended node must have lost the game
             node.backup(-1, self.gamma)
-
-    # def simulate_one_step(self):
-    #     legal_moves = (self.board == 0)
-    #     node = self.root
-    #     # todo: first color is -1
-    #     color = node.color    # the color of the root node may be different when the board is empty
-    #     board = np.copy(self.board)
-    #     action = self.last_move
-    #     while node.children:    # select
-    #         node, action = node.select(self.c_puct, legal_moves)
-    #         legal_moves[action] = False
-    #         board[action] = color
-    #         color = -color
-    #     if node.is_end:    # evaluated end node
-    #         node.backup(node.Q, self.gamma)
-    #         return
-    #     if action is not None:    # if action is None, the node is not an end node
-    #         game_result = check_result(board, action//15, action%15)    #### a function judging the game results, returning "blackwin", "whitewin", "draw", or "unfinished"
-    #         if game_result != "unfinished":
-    #             node.is_end = True
-    #             if game_result == "draw":
-    #                 node.backup(0, self.gamma)
-    #             else:
-    #                 node.backup(-1, self.gamma)    # the color of an ended node must have lost the game
-    #             return
-    #     p_prior, v = self.get_p_prior_v(board, color, action)
-    #     node.expand(p_prior)    # expand
-    #     node.backup(v, self.gamma)    # backup
 
     def get_p_prior_v(self, board, color, last_move):
         net = self.black_net if color == 1 else self.white_net
@@ -113,21 +101,9 @@ class MCTS:
         #     raise RuntimeError(f"Invalid thread number: {self.num_threads}.")
 
     def action(self):
-        """
-        Returns:
-        --------
-        action: int, where to place stone
-        p: 225-d array, frequency of each choice, for training use
-        """
-        # self.update_root(last_move%15, last_move//15)
         stage = np.sum(np.abs(self.board)) + 1
         if stage == 1:
             return 7, 7, None
-        # We need to rebase our root node to the board first, because of new stones being placed
-        # if not self.root.children and last_move is not None:    # the root is a leaf node, and the board is not empty
-        #     self.simulate(self.simulation_times)
-        # if last_move is not None:    # we only need to rebase when the board is not empty
-        #     self.root, self.last_move = self.root.children[last_move], last_move    # rebase
         self.simulate(self.simulation_times)    # simulate
         N_list = np.array([child.N * 1.0 for child in self.root.children])
         if stage > self.stochastic_steps:    # determininstic policy
@@ -138,15 +114,12 @@ class MCTS:
             pi /= np.sum(pi)
             action = self.root.children[np.random.choice([i for i in range(len(self.root.children))], p=pi)].move
         N_list /= np.sum(N_list)    # for training use
-        # if not self.self_play:    # while not self-playing, change root node to the opposite color
-        #     self.update(action)
         return action//15, action%15, N_list
 
     def update(self, action):
         self.root = self.root.children[action]
         self.root.N += 1
         self.last_move = action
-
 
     def reset(self):
         self.root = Node(1.0, None, -self.color, -1)  # start from empty board

@@ -5,15 +5,22 @@ from model import *
 
 class Agent():
 
-    def __init__(self, color, board):
+    def __init__(self, color, board, name):
         self.color = color
         self.board = board
+        self.name = name
 
     # def move(self, x, y, color):
     #     if x >= 0 and y >= 0:
     #         self.board[x * 15 + y] = color
 
     def next_action(self):
+        pass
+
+    def move_one_step(self, x, y, color):
+        pass
+
+    def reset(self):
         pass
 
     # def play(self, board, last_move):
@@ -50,13 +57,19 @@ class Agent():
 class MentorAgent(Agent):
 
     def __init__(self, color, board):
-        super().__init__(color, board)
+        super().__init__(color, board, 'mentor')
         self.ai = Mentorai(color, board)
 
     def next_action(self):
         x, y = self.ai.action()
         # self.move(x, y, self.color)
         return x, y
+
+    def move_one_step(self, x, y, color):
+        pass
+
+    def reset(self):
+        pass
 
     # def play(self, last_move=None):
     #     return self.ai.action()
@@ -92,7 +105,7 @@ class MentorAgent(Agent):
 class MCTSAgent(Agent):
 
     def __init__(self, config, color, board):
-        super().__init__(color, board)
+        super().__init__(color, board, 'mcts')
         # print("begin to load net......")
         black_net = GomokuNet({'color': 1, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32,
                                'path': config['model_path'] + '/black', 'version': config['version']}).to(device=config['device'])
@@ -105,6 +118,9 @@ class MCTSAgent(Agent):
     def next_action(self):
         x, y, _ = self.ai.action()
         return x, y
+
+    def move_one_step(self, x, y, color):
+        self.ai.move_one_step(x, y, color)
 
     # def play(self, board, last_move):
     #     action, p = self.ai.action(board, last_move)

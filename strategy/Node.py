@@ -36,7 +36,7 @@ class Node:
             #     return self.children[action], action
         # return None, -1
 
-    def expand(self, board, p_prior, legal_moves):
+    def expand(self, p_prior, legal_moves):
         """
         Parameters:
         -----------
