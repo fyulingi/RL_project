@@ -3,86 +3,7 @@ import torch
 
 class Generator:
     def __init__(self, max_noise_stone_num):
-
         self._max_noise_stone_num = max_noise_stone_num
-
-    def generate_live_4_attack(self, sample_num=10000):
-        board_record_black, last_move_record_black, p_record_black, z_record_black = [], [], [], []
-        board_record_white, last_move_record_white, p_record_white, z_record_white = [], [], [], []
-        i = 0
-        while i < sample_num:
-            color = np.random.randint(0, 2) * 2 - 1
-            board = np.zeros(225)
-            pos_list, fix_pos_list = self._generate_consecutive_line(consecutive_num=4)
-            if len(fix_pos_list) == 0:
-                continue
-
-            for x, y in pos_list:
-                board[15 * x + y] = color
-
-            pi = np.array([0.0 for _ in range(225)])
-            if len(fix_pos_list) == 2:
-                ind_1 = 15 * fix_pos_list[0][0] + fix_pos_list[0][1]
-                ind_2 = 15 * fix_pos_list[1][0] + fix_pos_list[1][1]
-                pi[ind_1], pi[ind_2] = 0.5, 0.5
-            if len(fix_pos_list) == 1:
-                ind = 15 * fix_pos_list[0][0] + fix_pos_list[0][1]
-                pi[ind] = 1
-
-            self._add_noise(board=board, next_player=color, max_stone_num=self._max_noise_stone_num,
-                            fix_pos_list=fix_pos_list)
-
-            if color == 1:
-                board_record_black.append(board)
-                last_move_record_black.append(15 * pos_list[0][0] + pos_list[0][1])
-                p_record_black.append(pi)
-                z_record_black.append(1)
-            else:
-                board_record_white.append(board)
-                last_move_record_white.append(15 * pos_list[0][0] + pos_list[0][1])
-                p_record_white.append(pi)
-                z_record_white.append(1)
-            i += 1
-        return board_record_black, last_move_record_black, p_record_black, z_record_black, board_record_white, last_move_record_white, p_record_white, z_record_white
-
-    def generate_live_4_defend(self, sample_num=10000):
-        board_record_black, last_move_record_black, p_record_black, z_record_black = [], [], [], []
-        board_record_white, last_move_record_white, p_record_white, z_record_white = [], [], [], []
-        i = 0
-        while i < sample_num:
-            color = np.random.randint(0, 2) * 2 - 1
-            board = np.zeros(225)
-            pos_list, fix_pos_list = self._generate_consecutive_line(consecutive_num=4)
-            if len(fix_pos_list) == 0:
-                continue
-
-            for x, y in pos_list:
-                board[15 * x + y] = color
-
-            pi = np.array([0.0 for _ in range(225)])
-            if len(fix_pos_list) == 2:
-                ind_1 = 15 * fix_pos_list[0][0] + fix_pos_list[0][1]
-                ind_2 = 15 * fix_pos_list[1][0] + fix_pos_list[1][1]
-                pi[ind_1], pi[ind_2] = 0.5, 0.5
-            if len(fix_pos_list) == 1:
-                ind = 15 * fix_pos_list[0][0] + fix_pos_list[0][1]
-                pi[ind] = 1
-
-            self._add_noise(board=board, next_player=-color, max_stone_num=self._max_noise_stone_num,
-                            fix_pos_list=fix_pos_list)
-
-            if color == -1:
-                board_record_black.append(board)
-                last_move_record_black.append(15 * pos_list[0][0] + pos_list[0][1])
-                p_record_black.append(pi)
-                z_record_black.append(-1)
-            else:
-                board_record_white.append(board)
-                last_move_record_white.append(15 * pos_list[0][0] + pos_list[0][1])
-                p_record_white.append(pi)
-                z_record_white.append(-1)
-            i += 1
-        return board_record_black, last_move_record_black, p_record_black, z_record_black, board_record_white, last_move_record_white, p_record_white, z_record_white
 
     def generate_dead_4_oooo_defend(self, sample_num=10000):
         board_record_black, last_move_record_black, p_record_black, z_record_black = [], [], [], []
@@ -487,9 +408,9 @@ class Generator:
         torch.save(np.array(p_record_white), path + '/white/p_record.hyt')
         torch.save(np.array(z_record_white), path + '/white/z_record.hyt')
 
-    def gen_live3_defend_data(self, path, sample_num=10000):
-        board_record_black, last_move_record_black, p_record_black, z_record_black = [], [], [], []
-        board_record_white, last_move_record_white, p_record_white, z_record_white = [], [], [], []
+    def gen_live3_defend_data(self, black_data, white_data,  sample_num=5000):
+        board_record_black, last_move_record_black, p_record_black, z_record_black = black_data[0], black_data[1], black_data[2], black_data[3]
+        board_record_white, last_move_record_white, p_record_white, z_record_white = white_data[0], white_data[1], white_data[2], white_data[3]
         print("Begin to generate live 3 oo_o defend data......")
         record = self.generate_live_3_oo_o_defend(sample_num=sample_num)
         board_record_black.extend(record[0])
@@ -511,6 +432,132 @@ class Generator:
         last_move_record_white.extend(record[5])
         p_record_white.extend(record[6])
         z_record_white.extend(record[7])
+        # torch.save(np.array(board_record_black), path + '/black/board_record.hyt')
+        # torch.save(np.array(last_move_record_black), path + '/black/last_move_record.hyt')
+        # torch.save(np.array(p_record_black), path + '/black/p_record.hyt')
+        # torch.save(np.array(z_record_black), path + '/black/z_record.hyt')
+        # torch.save(np.array(board_record_white), path + '/white/board_record.hyt')
+        # torch.save(np.array(last_move_record_white), path + '/white/last_move_record.hyt')
+        # torch.save(np.array(p_record_white), path + '/white/p_record.hyt')
+        # torch.save(np.array(z_record_white), path + '/white/z_record.hyt')
+
+    def gen_live3_attack_data(self, black_data, white_data,  sample_num=5000):
+        board_record_black, last_move_record_black, p_record_black, z_record_black = black_data[0], black_data[1], black_data[2], black_data[3]
+        board_record_white, last_move_record_white, p_record_white, z_record_white = white_data[0], white_data[1], white_data[2], white_data[3]
+        print("Begin to generate live 3 oo_o defend data......")
+        record = self.generate_live_3_oo_o_attack(sample_num=sample_num)
+        board_record_black.extend(record[0])
+        last_move_record_black.extend(record[1])
+        p_record_black.extend(record[2])
+        z_record_black.extend(record[3])
+        board_record_white.extend(record[4])
+        last_move_record_white.extend(record[5])
+        p_record_white.extend(record[6])
+        z_record_white.extend(record[7])
+
+        print("Begin to generate live 3 ooo defend data......")
+        record = self.generate_live_3_ooo_attack(sample_num=sample_num)
+        board_record_black.extend(record[0])
+        last_move_record_black.extend(record[1])
+        p_record_black.extend(record[2])
+        z_record_black.extend(record[3])
+        board_record_white.extend(record[4])
+        last_move_record_white.extend(record[5])
+        p_record_white.extend(record[6])
+        z_record_white.extend(record[7])
+
+
+    def gen_live4_attack_data(self, black_data, white_data, sample_num=5000):
+        board_record_black, last_move_record_black, p_record_black, z_record_black = black_data[0], black_data[1], black_data[2], black_data[3]
+        board_record_white, last_move_record_white, p_record_white, z_record_white = white_data[0], white_data[1], white_data[2], white_data[3]
+        i = 0
+        while i < sample_num:
+            color = np.random.randint(0, 2) * 2 - 1
+            board = np.zeros(225)
+            pos_list, fix_pos_list = self._generate_consecutive_line(consecutive_num=4)
+            if len(fix_pos_list) == 0:
+                continue
+
+            for x, y in pos_list:
+                board[15 * x + y] = color
+
+            pi = np.array([0.0 for _ in range(225)])
+            if len(fix_pos_list) == 2:
+                ind_1 = 15 * fix_pos_list[0][0] + fix_pos_list[0][1]
+                ind_2 = 15 * fix_pos_list[1][0] + fix_pos_list[1][1]
+                pi[ind_1], pi[ind_2] = 0.5, 0.5
+            if len(fix_pos_list) == 1:
+                ind = 15 * fix_pos_list[0][0] + fix_pos_list[0][1]
+                pi[ind] = 1
+
+            self._add_noise(board=board, next_player=color, max_stone_num=self._max_noise_stone_num,
+                            fix_pos_list=fix_pos_list)
+
+            if color == 1:
+                board_record_black.append(board)
+                last_move_record_black.append(15 * pos_list[0][0] + pos_list[0][1])
+                p_record_black.append(pi)
+                z_record_black.append(1)
+            else:
+                board_record_white.append(board)
+                last_move_record_white.append(15 * pos_list[0][0] + pos_list[0][1])
+                p_record_white.append(pi)
+                z_record_white.append(1)
+            i += 1
+        return
+
+    def gen_live4_defend_data(self, black_data, white_data, sample_num=5000):
+        board_record_black, last_move_record_black, p_record_black, z_record_black = black_data[0], black_data[1], black_data[2], black_data[3]
+        board_record_white, last_move_record_white, p_record_white, z_record_white = white_data[0], white_data[1], white_data[2], white_data[3]
+        i = 0
+        while i < sample_num:
+            color = np.random.randint(0, 2) * 2 - 1
+            board = np.zeros(225)
+            pos_list, fix_pos_list = self._generate_consecutive_line(consecutive_num=4)
+            if len(fix_pos_list) == 0:
+                continue
+
+            for x, y in pos_list:
+                board[15 * x + y] = color
+
+            pi = np.array([0.0 for _ in range(225)])
+            if len(fix_pos_list) == 2:
+                ind_1 = 15 * fix_pos_list[0][0] + fix_pos_list[0][1]
+                ind_2 = 15 * fix_pos_list[1][0] + fix_pos_list[1][1]
+                pi[ind_1], pi[ind_2] = 0.5, 0.5
+            if len(fix_pos_list) == 1:
+                ind = 15 * fix_pos_list[0][0] + fix_pos_list[0][1]
+                pi[ind] = 1
+
+            self._add_noise(board=board, next_player=-color, max_stone_num=self._max_noise_stone_num,
+                            fix_pos_list=fix_pos_list)
+
+            if color == -1:
+                board_record_black.append(board)
+                last_move_record_black.append(15 * pos_list[0][0] + pos_list[0][1])
+                p_record_black.append(pi)
+                z_record_black.append(-1)
+            else:
+                board_record_white.append(board)
+                last_move_record_white.append(15 * pos_list[0][0] + pos_list[0][1])
+                p_record_white.append(pi)
+                z_record_white.append(-1)
+            i += 1
+        return
+
+    def generate_train_data(self, path, sample_num = 5000):
+        board_record_black, last_move_record_black, p_record_black, z_record_black = [], [], [], []
+        board_record_white, last_move_record_white, p_record_white, z_record_white = [], [], [], []
+        black_data = [board_record_black, last_move_record_black, p_record_black, z_record_black]
+        white_data = [board_record_white, last_move_record_white, p_record_white, z_record_white]
+
+        self.gen_live3_defend_data(black_data, white_data, sample_num)
+        self.gen_live3_attack_data(black_data, white_data, sample_num)
+        self.gen_live4_defend_data(black_data, white_data, sample_num)
+        self.gen_live4_attack_data(black_data, white_data, sample_num)
+        print(len(black_data[0]), len(black_data[1]), len(black_data[2]), len(black_data[3]))
+        print(len(white_data[0]), len(white_data[1]), len(white_data[2]), len(white_data[3]))
+
         torch.save(np.array(board_record_black), path + '/black/board_record.hyt')
         torch.save(np.array(last_move_record_black), path + '/black/last_move_record.hyt')
         torch.save(np.array(p_record_black), path + '/black/p_record.hyt')
@@ -521,6 +568,5 @@ class Generator:
         torch.save(np.array(z_record_white), path + '/white/z_record.hyt')
 
 if __name__ == '__main__':
-    data_generator = Generator(5)
-    # data_generator.gen_and_save('./gamedata/generated')
-    data_generator.gen_live3_defend_data('./gamedata/enhanced')
+    data_generator = Generator(2)
+    data_generator.generate_train_data('./gamedata/enhanced', sample_num = 5000)

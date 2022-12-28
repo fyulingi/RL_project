@@ -13,14 +13,14 @@ class Agent():
     #     if x >= 0 and y >= 0:
     #         self.board[x * 15 + y] = color
 
-    def next_action(self, last_move):
+    def next_action(self):
         pass
 
-    def play(self, board, last_move):
-        pass
+    # def play(self, board, last_move):
+    #     pass
 
-    def self_play(self):
-        pass
+    # def self_play(self):
+    #     pass
 
     # def self_play_and_save(self, path, num_games, verbose=False):
     #     board_record_black, last_move_record_black, p_record_black, z_record_black = [], [], [], []
@@ -53,7 +53,7 @@ class MentorAgent(Agent):
         super().__init__(color, board)
         self.ai = Mentorai(color, board)
 
-    def next_action(self, last_move):
+    def next_action(self):
         x, y = self.ai.action()
         # self.move(x, y, self.color)
         return x, y
@@ -91,48 +91,54 @@ class MentorAgent(Agent):
 
 class MCTSAgent(Agent):
 
-    def __init__(self, config, path, version, color, board, stochastic_steps, device):
+    def __init__(self, config, color, board):
         super().__init__(color, board)
-        black_net = GomokuNet({'color': 1, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32, 'path': path + '/black', 'version': version}).to(device=device)
-        white_net = GomokuNet({'color': -1, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32, 'path': path + '/white', 'version': version}).to(device=device)
-        self.ai = MCTS(config, black_net, white_net, color, board, stochastic_steps)
+        # print("begin to load net......")
+        black_net = GomokuNet({'color': 1, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32,
+                               'path': config['model_path'] + '/black', 'version': config['version']}).to(device=config['device'])
+        white_net = GomokuNet({'color': -1, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32,
+                               'path': config['model_path'] + '/white', 'version': config['version']}).to(device=config['device'])
+        # print("begin to init mcts......")
+        self.ai = MCTS(config, black_net, white_net, color, board)
+        # print("mcts agent init done")
 
-    def next_action(self, last_move):
-        x, y, _ = self.ai.action(last_move)
-        # self.move(x, y, self.color)
+    def next_action(self):
+        x, y, _ = self.ai.action()
         return x, y
 
-    def play(self, board, last_move):
-        action, p = self.ai.action(board, last_move)
-        return action
+    # def play(self, board, last_move):
+    #     action, p = self.ai.action(board, last_move)
+    #     return action
 
-    def self_play(self):
-
+    def reset(self):
         self.ai.reset()
-        self.ai.self_play = True
-        game_result = "unfinished"
-        board = np.zeros(225)
-        last_move = None
-        color = 1
-        board_record = []
-        last_move_record = []
-        p_record = []
-        z_record = []
-        while game_result == "unfinished":
-            last_move_record.append(last_move)
-            action, p = self.ai.action(board, last_move)
-            board_record.append(board.copy())
-            p_record.append(p)
-            board[action] = color
-            color = -color
-            last_move = action
-            game_result = check_result(board, last_move)
-        reward = 0 if game_result == "draw" else 1
-        z_record.append(reward)
-        while len(z_record) < len(board_record):
-            z_record.append(-self.ai.gamma * z_record[-1])
-        z_record = z_record[::-1]
-        return board_record, last_move_record, p_record, z_record
+
+    # def self_play(self):
+    #     self.ai.reset()
+    #     self.ai.self_play = True
+    #     game_result = "unfinished"
+    #     board = np.zeros(225)
+    #     last_move = None
+    #     color = 1
+    #     board_record = []
+    #     last_move_record = []
+    #     p_record = []
+    #     z_record = []
+    #     while game_result == "unfinished":
+    #         last_move_record.append(last_move)
+    #         action, p = self.ai.action(board, last_move)
+    #         board_record.append(board.copy())
+    #         p_record.append(p)
+    #         board[action] = color
+    #         color = -color
+    #         last_move = action
+    #         game_result = check_result(board, last_move)
+    #     reward = 0 if game_result == "draw" else 1
+    #     z_record.append(reward)
+    #     while len(z_record) < len(board_record):
+    #         z_record.append(-self.ai.gamma * z_record[-1])
+    #     z_record = z_record[::-1]
+    #     return board_record, last_move_record, p_record, z_record
 
     
 

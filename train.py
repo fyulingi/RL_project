@@ -6,16 +6,11 @@ import torch.optim as optim
 from utils import printboard
 
 
-def mentorai_selfplay(path, num_games, verbose=True):
-    agent = MentorAgent(1)
-    agent.self_play_and_save(path, num_games, verbose)
-
-
 def train_net(color, netpath, version, datapath, epochs, device, savepath):
-    config = {'color': color, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32, 'path': netpath, 'version': version}
+    config = {'color': color, 'learning_rate': 1e-2, 'momentum': 9e-1, 'l2': 1e-5, 'batch_size': 32, 'path': netpath, 'version': version}
     model = GomokuNet(config)
-    optimizer = optim.SGD(model.parameters(), lr=model.learning_rate, momentum=model.momentum, weight_decay=model.l2, nesterov=True)
-    # optimizer = optim.Adam(model.parameters(), lr=2e-4, weight_decay=model.l2)
+    # optimizer = optim.SGD(model.parameters(), lr=model.learning_rate, momentum=model.momentum, weight_decay=model.l2, nesterov=True)
+    optimizer = optim.Adam(model.parameters(), lr=model.learning_rate, weight_decay=model.l2)
     train_data = Dataset()
     train_data.collect_data(datapath)
     train_data.board = train_data.board[:25600]
@@ -24,6 +19,7 @@ def train_net(color, netpath, version, datapath, epochs, device, savepath):
     train_data.z = train_data.z[:25600]
     print(f"loss: {train_GomokuNet(model, optimizer, train_data, epochs, device)}")
     torch.save(model.state_dict(), savepath + f'/version_{version + 1}.model')
+
 
 def MCTS_vs_mentor(path, version):
     ai_mcts = MCTSAgent({'c_puct': 5, 'simulation_times': 1600, 'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95}, path, version, 1, 6)
@@ -72,12 +68,14 @@ def ai_playing(ai1, ai2, verbose=False):
         color = -color
     return game_result
 
+
 def train_on_mentor_selfplay(start_version, rounds=1):
     for i in range(rounds):
         version = start_version + i
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         train_net(1, "./models1/black", version, "./gamedata/mentor/black", 50, device, "./models1/black")
         train_net(-1, "./models1/white", version, "./gamedata/mentor/white", 50, device, "./models1/white")
+
 
 if __name__ == "__main__":
 

@@ -48,11 +48,11 @@ if __name__ == '__main__':
     # MCTS
     # todo: if run on botzone, please upload models to "管理存储空间",
     #     and change `model_path` to '/data/models'
-    model_path = os.getcwd()+'/./models'
+    # model_path = os.getcwd()+'/./models'
+    model_path = '/data/models'
     # print(model_path)
-    mcts_config = {'c_puct': 5, 'simulation_times': 1600, 'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95, 'num_threads': 1}
-    ai_mcts = MCTSAgent(mcts_config, model_path, 0, color, board, 6, torch.device('cpu'))
-    # agent = MCTS.MCTSAgent({'c_puct': 5, 'simulation_times': 1600, 'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95, 'num_threads': 8}, './models1', 0, 1, 6, torch.device('cuda'))
-    # print(ai_playing(ai_mcts, ai_mentor, True))
-    x, y = ai_mcts.next_action(last_move)
+    mcts_config = {'c_puct': 5, 'version': 0, 'simulation_times': 100, 'device': torch.device('cpu'), 'model_path': model_path,
+                   'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95, 'num_threads': 1, 'stochastic_steps': 0}
+    ai_mcts = MCTSAgent(mcts_config, color, board)
+    x, y = ai_mcts.next_action()
     print(json.dumps({"response": {"x": x, "y": y}}))

@@ -48,10 +48,6 @@ class GomokuNet(nn.Module):
         self.conv3 = BN_Conv2d(32, 32, 3, 1, 1)
         self.res2 = ResidualBlock(32)
 
-        # self.res2 = ResidualBlock(32)
-        # self.res3 = ResidualBlock(32)
-        # self.res4 = ResidualBlock(32)
-
         self.policyhead5 = BN_Conv2d(32, 2, 1, 1, 0)
         self.policyhead_fc6 = nn.Linear(450, 225)
 
@@ -68,9 +64,6 @@ class GomokuNet(nn.Module):
         out = self.res1(out)
         out = self.conv3(out)
         out = self.res2(out)
-        # out = self.res2(out)
-        # out = self.res3(out)
-        # out = self.res4(out)
 
         policy = self.policyhead5(out)
         policy = policy.view(policy.size(0), -1)
@@ -102,7 +95,6 @@ class GomokuNet(nn.Module):
 
 
 def train_GomokuNet(model, optimizer, train_data, epochs, device, print_every=100):
-
     model = model.to(device=device)
     loss_sum = 0
     data_size = train_data.size()    # train_data is Dataset object
@@ -142,7 +134,6 @@ def train_GomokuNet(model, optimizer, train_data, epochs, device, print_every=10
     return loss_sum / epochs
 
 def get_input_tensor(board, last_move, color):
-    
     res = []
     for tempboard, tempmove in zip(board, last_move):
         tempinput = []

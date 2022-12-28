@@ -6,7 +6,7 @@ from strategy.Node import Node
 
 
 class MCTS:
-    def __init__(self, config, black_net, white_net, color, board, stochastic_steps):
+    def __init__(self, config, black_net, white_net, color, board):
         """
         Parameters:
         -----------
@@ -15,7 +15,6 @@ class MCTS:
         color: -1 or +1, the color of the MCTS agent, +1 for black, -1 for white, only counts when not self-playing
         stochastic_steps: int, total stones played by stochastic methods, 0 for deterministic, >0 for stochastic (training only)
         """
-        # todo: change root
         self.root = Node(1.0, None, -color, -1)    # start from empty board
         self.board = board    # board info vector for root node
         self.last_move = None    # update the last move in the root board
@@ -29,7 +28,7 @@ class MCTS:
         self.black_net = black_net
         self.white_net = white_net
         self.color = color
-        self.stochastic_steps = stochastic_steps
+        self.stochastic_steps = config['stochastic_steps']
         self._expanding_list = []
 
     def update_root(self, move_x, move_y):
@@ -104,7 +103,7 @@ class MCTS:
 
     def simulate(self, num_steps):
         if self.num_threads == 1:
-            for _ in range(num_steps):
+            for step in range(num_steps):
                 self.simulation_one_game()
                 # self.simulate_one_step()
                 # print(f"{_ + 1} step finished.")
@@ -113,7 +112,7 @@ class MCTS:
         # else:
         #     raise RuntimeError(f"Invalid thread number: {self.num_threads}.")
 
-    def action(self, last_move):
+    def action(self):
         """
         Returns:
         --------
@@ -148,11 +147,11 @@ class MCTS:
         self.root.N += 1
         self.last_move = action
 
-    
-    # def reset(self):
-    #     self.root = Node(1.0, None, 1)
-    #     self.board = np.zeros(225)
-    #     self.last_move = None
+
+    def reset(self):
+        self.root = Node(1.0, None, -self.color, -1)  # start from empty board
+        self.last_move = None  # update the last move in the root board
+
     #
     # def _get_simulate_thread_target(self, num_steps, num_threads):
     #     def _simulate_thread():
