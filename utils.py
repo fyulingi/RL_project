@@ -1,76 +1,30 @@
 import numpy as np
 
-def check_result(board, last_move):
+def count_dir_num(board, color, x, y, x_dir, y_dir):
+    res = 0
+    while 0 <= x < 15 and 0 <= y < 15:
+        if board[x * 15 + y] == color:
+            x += x_dir
+            y += y_dir
+            res += 1
+        else:
+            break
+    return res
 
-    """
-    Parameters:
-    -----------
-    board: 225-d array, board info
-    last_move: int, position of the last_move, None for empty board
 
-    Returns:
-    --------
-    game_result: str, "whitewin", "blackwin", "draw", or "unfinished"
-
-    """
-
-    if last_move is None:
+def check_result(board, last_x, last_y):
+    if last_x < 0 or last_y < 0:
         return "unfinished"
-    board2D = board.reshape((15, 15))
-    loc2D = (last_move // 15, last_move % 15)
-    x, y = loc2D
-    color = board[last_move]
-    assert color != 0
-    winning_message = "blackwin" if color == 1 else "whitewin"
-    h_num, v_num, d_num, c_num = 1, 1, 1, 1    # num of consecutive stones along horizontal, vertical, diagonal, counterdiagonal directions
-    for j in range(1, 5):
-        if y + j >= 15 or board2D[x, y + j] != color:
-            break
-        h_num += 1
-    if h_num >= 5:
-        return winning_message
-    for j in range(1, 5):
-        if y - j < 0 or board2D[x, y - j] != color:
-            break
-        h_num += 1
-    if h_num >= 5:
-        return winning_message
-    for i in range(1, 5):
-        if x + i >= 15 or board2D[x + i, y] != color:
-            break
-        v_num += 1
-    if v_num >= 5:
-        return winning_message
-    for i in range(1, 5):
-        if x - i < 0 or board2D[x - i, y] != color:
-            break
-        v_num += 1
-    if v_num >= 5:
-        return winning_message
-    for i, j in zip(range(1, 5), range(1, 5)):
-        if x + i >= 15 or y + j >= 15 or board2D[x + i, y + j] != color:
-            break
-        d_num += 1
-    if d_num >= 5:
-        return winning_message
-    for i, j in zip(range(1, 5), range(1, 5)):
-        if x - i < 0 or y - j < 0 or board2D[x - i, y - j] != color:
-            break
-        d_num += 1
-    if d_num >= 5:
-        return winning_message
-    for i, j in zip(range(1, 5), range(1, 5)):
-        if x + i >= 15 or y - j < 0 or board2D[x + i, y - j] != color:
-            break
-        c_num += 1
-    if c_num >= 5:
-        return winning_message
-    for i, j in zip(range(1, 5), range(1, 5)):
-        if x - i < 0 or y + j >= 15 or board2D[x - i, y + j] != color:
-            break
-        c_num += 1
-    if c_num >= 5:
-        return winning_message
+    color = board[last_x*15+last_y]
+    win_mess = "blackwin" if color == 1 else "whitewin"
+    # left, right, up, down, leftup, rightdown, leftdown, rightup
+    x_dir = [0, 0, -1, 1, -1, 1, 1, -1]
+    y_dir = [-1, 1, 0, 0, -1, 1, -1, 1]
+    for i in range(0, 8, 2):
+        a = count_dir_num(board, color, last_x, last_y, x_dir[i], y_dir[i])
+        a += count_dir_num(board, color, last_x, last_y, x_dir[i+1], y_dir[i+1])-1
+        if a >= 5:
+            return win_mess
     return "draw" if np.sum(np.abs(board)) == 225 else "unfinished"
 
 def board2str(board, color, pos):

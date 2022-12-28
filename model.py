@@ -60,7 +60,7 @@ class GomokuNet(nn.Module):
         self.valuehead_fc7 = nn.Linear(32, 1)
 
         if self.start_version != -1 and self.load_path is not None:
-            self.load_state_dict(torch.load(self.load_path + f"/version_{self.start_version}.hyt"))
+            self.load_state_dict(torch.load(self.load_path + f"/version_{self.start_version}.model", map_location=torch.device('cpu')))
 
     def forward(self, x):
         out = self.conv1(x)
@@ -87,7 +87,8 @@ class GomokuNet(nn.Module):
         return policy, value
 
     def predict(self, board, last_move):
-        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        device = torch.device('cpu')
+        # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         layer1 = np.array(np.array(board) == self.color, dtype=np.float).reshape(15, 15)
         layer2 = np.array(np.array(board) == -self.color, dtype=np.float).reshape(15, 15)
         layer3 = np.zeros((15, 15))

@@ -13,7 +13,7 @@ class Agent():
     #     if x >= 0 and y >= 0:
     #         self.board[x * 15 + y] = color
 
-    def next_action(self):
+    def next_action(self, last_move):
         pass
 
     def play(self, board, last_move):
@@ -53,7 +53,7 @@ class MentorAgent(Agent):
         super().__init__(color, board)
         self.ai = Mentorai(color, board)
 
-    def next_action(self):
+    def next_action(self, last_move):
         x, y = self.ai.action()
         # self.move(x, y, self.color)
         return x, y
@@ -92,14 +92,17 @@ class MentorAgent(Agent):
 class MCTSAgent(Agent):
 
     def __init__(self, config, path, version, color, board, stochastic_steps, device):
-
         super().__init__(color, board)
-        black_net = GomokuNet({'color': color, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32, 'path': path + '/black', 'version': version}).to(device=device)
-        white_net = GomokuNet({'color': color, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32, 'path': path + '/white', 'version': version}).to(device=device)
-        self.ai = MCTS(config, black_net, white_net, color, stochastic_steps)
+        black_net = GomokuNet({'color': 1, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32, 'path': path + '/black', 'version': version}).to(device=device)
+        white_net = GomokuNet({'color': -1, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32, 'path': path + '/white', 'version': version}).to(device=device)
+        self.ai = MCTS(config, black_net, white_net, color, board, stochastic_steps)
+
+    def next_action(self, last_move):
+        x, y, _ = self.ai.action(last_move)
+        # self.move(x, y, self.color)
+        return x, y
 
     def play(self, board, last_move):
-
         action, p = self.ai.action(board, last_move)
         return action
 

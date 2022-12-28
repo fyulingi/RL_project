@@ -334,7 +334,8 @@ class Generator:
                 p_record_white.append(pi)
                 z_record_white.append(0)
             i += 1
-        return board_record_black, last_move_record_black, p_record_black, z_record_black, board_record_white, last_move_record_white, p_record_white, z_record_white
+        return board_record_black, last_move_record_black, p_record_black, z_record_black,\
+               board_record_white, last_move_record_white, p_record_white, z_record_white
 
     def _generate_consecutive_line(self, consecutive_num):
         start_pos = np.random.randint(0, 15, 2)
@@ -366,7 +367,7 @@ class Generator:
         return pos_list, fix_pos_list
 
     def _add_noise(self, board, next_player, max_stone_num, fix_pos_list):
-        stone_num = np.random.randint(30, max_stone_num+1)
+        stone_num = np.random.randint(0, max_stone_num+1)
         black_stone_ind = np.where(board == 1)
         white_stone_ind = np.where(board == -1)
         black_stone_num = len(black_stone_ind[0])
@@ -499,6 +500,7 @@ class Generator:
         last_move_record_white.extend(record[5])
         p_record_white.extend(record[6])
         z_record_white.extend(record[7])
+
         print("Begin to generate live 3 ooo defend data......")
         record = self.generate_live_3_ooo_defend(sample_num=sample_num)
         board_record_black.extend(record[0])
@@ -519,6 +521,6 @@ class Generator:
         torch.save(np.array(z_record_white), path + '/white/z_record.hyt')
 
 if __name__ == '__main__':
-    data_generator = Generator(64)
+    data_generator = Generator(5)
     # data_generator.gen_and_save('./gamedata/generated')
     data_generator.gen_live3_defend_data('./gamedata/enhanced')
