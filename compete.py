@@ -83,7 +83,19 @@ def MCTS_MCTS(plays_num):
     player2 = agent.MCTSAgent(mcts_config, -1, board)
     two_players_play(board, player1, player2, plays_num)
 
+
+def mentor_imporvedmentor(plays_num):
+    board = np.zeros([225])
+    player1 = agent.MentorAgent(1, board)
+    player2 = agent.ImMentorAgent(-1, board)
+    two_players_play(board, player1, player2, plays_num)
+
+    player1 = agent.ImMentorAgent(1, board)
+    player2 = agent.MentorAgent(-1, board)
+    two_players_play(board, player1, player2, plays_num)
+
 if __name__ == '__main__':
     # mentor_mentor(50)
     # mentor_MCTS(50)
-    MCTS_MCTS(50)
+    # MCTS_MCTS(50)
+    mentor_imporvedmentor(10)

@@ -25,6 +25,7 @@ class MCTS:
         self.self_play = config['self_play']    # whether play with itself or another agent
         self.gamma = config['gamma']
         self.num_threads = config['num_threads']
+        # todo: 我觉得两个网络没有道理
         self.black_net = black_net
         self.white_net = white_net
         self.color = color
@@ -35,7 +36,7 @@ class MCTS:
         new_node = Node(1, node, -node.color, x*15+y)
         node.children.append(new_node)
 
-    def move_one_step(self, x, y, color):
+    def move_one_step(self, x, y):
         if len(self.root.children) == 0:
             self.expand_one_node_determined(self.root, x, y)
         for child in self.root.children:

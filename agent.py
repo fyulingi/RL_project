@@ -1,5 +1,6 @@
 from strategy.MCTS import *
 from strategy.mentor import *
+from strategy.improved_mentor import *
 import torch
 from model import *
 
@@ -72,7 +73,9 @@ class MentorAgent(Agent):
         pass
 
     # def play(self, last_move=None):
-    #     return self.ai.action()
+    #     x, y = self.ai.action()
+    #     prob = self.ai.get_prob()
+    #     return x, y, prob
 
     # def self_play(self, degree=3):
     #     game_result = "unfinished"
@@ -120,11 +123,11 @@ class MCTSAgent(Agent):
         return x, y
 
     def move_one_step(self, x, y, color):
-        self.ai.move_one_step(x, y, color)
+        self.ai.move_one_step(x, y)
 
-    # def play(self, board, last_move):
-    #     action, p = self.ai.action(board, last_move)
-    #     return action
+    def play(self, board, last_move):
+        action, p = self.ai.action(board, last_move)
+        return action, p
 
     def reset(self):
         self.ai.reset()
@@ -156,5 +159,18 @@ class MCTSAgent(Agent):
     #     z_record = z_record[::-1]
     #     return board_record, last_move_record, p_record, z_record
 
-    
 
+class ImMentorAgent(Agent):
+    def __init__(self, color, board):
+        super().__init__(color, board, 'improved_mentor')
+        self.ai = ImMentorai(color,board)
+
+    def next_action(self):
+        action = self.ai.get_action(4, 2)
+        return action // 15, action % 15
+
+    def move_one_step(self, x, y, color):
+        pass
+
+    def reset(self):
+        pass

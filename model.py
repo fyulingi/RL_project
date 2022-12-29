@@ -133,6 +133,7 @@ def train_GomokuNet(model, optimizer, train_data, epochs, device, print_every=10
             loss_sum += loss.item()
     return loss_sum / epochs
 
+
 def get_input_tensor(board, last_move, color):
     res = []
     for tempboard, tempmove in zip(board, last_move):
