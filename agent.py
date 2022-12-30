@@ -1,8 +1,7 @@
 from strategy.MCTS import *
 from strategy.mentor import *
 from strategy.improved_mentor import *
-import torch
-from model import *
+from strategy.MCTS_Node_model.model import *
 
 class Agent():
 
@@ -107,15 +106,12 @@ class MentorAgent(Agent):
 
 class MCTSAgent(Agent):
 
-    def __init__(self, config, color, board):
+    def __init__(self, mcts_config, model_config, color, board):
         super().__init__(color, board, 'mcts')
         # print("begin to load net......")
-        black_net = GomokuNet({'color': 1, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32,
-                               'path': config['model_path'] + '/black', 'version': config['version']}).to(device=config['device'])
-        white_net = GomokuNet({'color': -1, 'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32,
-                               'path': config['model_path'] + '/white', 'version': config['version']}).to(device=config['device'])
+        net = GomokuNet(model_config)
         # print("begin to init mcts......")
-        self.ai = MCTS(config, black_net, white_net, color, board)
+        self.ai = MCTS(mcts_config, net, color, board)
         # print("mcts agent init done")
 
     def next_action(self):
@@ -132,6 +128,7 @@ class MCTSAgent(Agent):
     def reset(self):
         self.ai.reset()
 
+    # todo: 保存棋局时，要把当前玩家设置颜色为1
     # def self_play(self):
     #     self.ai.reset()
     #     self.ai.self_play = True

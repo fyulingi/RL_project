@@ -61,14 +61,15 @@ def mentor_mentor(plays_num):
 def mentor_MCTS(plays_num):
     board = np.zeros([225])
     model_path = os.getcwd() + '/./models'
-    print("model path: ", model_path)
-    mcts_config = {'c_puct': 5, 'version': 1, 'simulation_times': 100, 'device': torch.device('cpu'), 'model_path': model_path,
-                   'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95, 'num_threads': 1, 'stochastic_steps': 0}
+    mcts_config = {'c_puct': 5, 'simulation_times': 100, 'tau_init': 1, 'tau_decay': 0.8,
+                   'gamma': 0.95, 'num_threads': 1, 'stochastic_steps': 0}
+    model_config = {'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32,
+                    'path': model_path, 'version': 0, 'device': torch.device('cpu')}
     player1 = agent.MentorAgent(1, board)
-    player2 = agent.MCTSAgent(mcts_config, -1, board)
+    player2 = agent.MCTSAgent(mcts_config, model_config, -1, board)
     two_players_play(board, player1, player2, plays_num)
 
-    player1 = agent.MCTSAgent(mcts_config, 1, board)
+    player1 = agent.MCTSAgent(mcts_config, model_config, 1, board)
     player2 = agent.MentorAgent(-1, board)
     two_players_play(board, player1, player2, plays_num)
 
@@ -76,11 +77,13 @@ def mentor_MCTS(plays_num):
 def MCTS_MCTS(plays_num):
     board = np.zeros([225])
     model_path = os.getcwd() + '/./models'
+    mcts_config = {'c_puct': 5, 'simulation_times': 100, 'tau_init': 1, 'tau_decay': 0.8,
+                   'gamma': 0.95, 'num_threads': 1, 'stochastic_steps': 0}
+    model_config = {'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32,
+                    'path': model_path, 'version': 0, 'device': torch.device('cpu')}
     print("model path: ", model_path)
-    mcts_config = {'c_puct': 5, 'version': 1, 'simulation_times': 5, 'device': torch.device('cpu'), 'model_path': model_path,
-                   'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95, 'num_threads': 1, 'stochastic_steps': 0}
-    player1 = agent.MCTSAgent(mcts_config, 1, board)
-    player2 = agent.MCTSAgent(mcts_config, -1, board)
+    player1 = agent.MCTSAgent(mcts_config, model_config, 1, board)
+    player2 = agent.MCTSAgent(mcts_config, model_config, -1, board)
     two_players_play(board, player1, player2, plays_num)
 
 

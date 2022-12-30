@@ -51,8 +51,10 @@ if __name__ == '__main__':
     # model_path = os.getcwd()+'/./models'
     model_path = '/data/models'
     # print(model_path)
-    mcts_config = {'c_puct': 5, 'version': 0, 'simulation_times': 100, 'device': torch.device('cpu'), 'model_path': model_path,
-                   'tau_init': 1, 'tau_decay': 0.8, 'self_play': False, 'gamma': 0.95, 'num_threads': 1, 'stochastic_steps': 0}
-    ai_mcts = MCTSAgent(mcts_config, color, board)
+    mcts_config = {'c_puct': 5, 'simulation_times': 100, 'tau_init': 1, 'tau_decay': 0.8,
+                   'gamma': 0.95, 'num_threads': 1, 'stochastic_steps': 0}
+    model_config = {'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32,
+                    'path': model_path, 'version': 0, 'device': torch.device('cpu')}
+    ai_mcts = MCTSAgent(mcts_config, model_config, color, board)
     x, y = ai_mcts.next_action()
     print(json.dumps({"response": {"x": x, "y": y}}))

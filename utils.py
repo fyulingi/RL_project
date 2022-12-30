@@ -1,5 +1,25 @@
 import numpy as np
 
+
+def get_search_field(board):
+    way = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+    res = []
+    for pos in range(225):
+        if board[pos] == 0:
+            continue
+        i, j = pos // 15, pos % 15
+        for d in way:
+            temp = 15 * (i + d[0]) + j + d[1]
+            if 0 <= i + d[0] < 15 and 0 <= j + d[1] < 15 and board[temp] == 0:
+                if temp not in res:
+                    res.append(temp)
+            temp = 15 * (i + 2 * d[0]) + j + 2 * d[1]
+            if 0 <= i + 2 * d[0] < 15 and 0 <= j + 2 * d[1] < 15 and board[temp] == 0:
+                if temp not in res:
+                    res.append(temp)
+    return res
+
+
 def count_dir_num(board, color, x, y, x_dir, y_dir):
     res = 0
     while 0 <= x < 15 and 0 <= y < 15:

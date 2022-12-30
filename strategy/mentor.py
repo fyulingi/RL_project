@@ -1,5 +1,5 @@
 import numpy as np
-from utils import board2str
+from utils import board2str, get_search_field
 
 
 def mode_counter(lines, modes):
@@ -16,21 +16,6 @@ class Mentorai():
     def __init__(self, color, board):
         self.color = color
         self.board = board
-
-    # comment: 不是邻居的点可能效果好
-    def get_search_field(self):
-        way = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-        res = []
-        for pos in range(225):
-            if self.board[pos] == 0:
-                continue
-            i, j = pos // 15, pos % 15
-            for d in way:
-                temp = 15 * (i + d[0]) + j + d[1]
-                if 0 <= i + d[0] < 15 and 0 <= j + d[1] < 15 and self.board[temp] == 0:
-                    if temp not in res:
-                        res.append(temp)
-        return res
 
     def compute_line_score(self, lines):
         score = 0
@@ -73,7 +58,7 @@ class Mentorai():
     def action(self, degree=3):
         if np.sum(np.abs(self.board)) == 0:
             return 112//15, 112%15
-        search_field = np.array(self.get_search_field())
+        search_field = np.array(get_search_field(self.board))
         scores = np.array([self.compute_score(pos) for pos in search_field])
         best_score = np.max(scores)
         good_moves = np.sum(scores >= 0.8 * best_score)

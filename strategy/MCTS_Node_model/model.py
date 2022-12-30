@@ -34,7 +34,6 @@ class ResidualBlock(nn.Module):
 class GomokuNet(nn.Module):
     def __init__(self, conf):
         super().__init__()
-        self.color = conf['color']
         self.learning_rate = conf['learning_rate']
         self.momentum = conf['momentum']
         self.l2 = conf['l2']
@@ -58,6 +57,8 @@ class GomokuNet(nn.Module):
         if self.start_version != -1 and self.load_path is not None:
             self.load_state_dict(torch.load(self.load_path + f"/version_{self.start_version}.model", map_location=torch.device('cpu')))
 
+        self.to(conf['device'])
+
     def forward(self, x):
         out = self.conv1(x)
         out = self.conv2(out)
@@ -79,19 +80,21 @@ class GomokuNet(nn.Module):
 
         return policy, value
 
-    def predict(self, board, last_move):
+    def predict(self, board, last_move, color):
         device = torch.device('cpu')
         # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-        layer1 = np.array(np.array(board) == self.color, dtype=np.float).reshape(15, 15)
-        layer2 = np.array(np.array(board) == -self.color, dtype=np.float).reshape(15, 15)
-        layer3 = np.zeros((15, 15))
+        layer1 = torch.tensor(board == color, dtype=torch.float).reshape(15, 15)
+        layer2 = torch.tensor(board == -color, dtype=torch.float).reshape(15, 15)
+        layer3 = torch.zeros((15, 15))
         if last_move is not None:
             layer3[last_move // 15, last_move % 15] = 1
-        input = np.array([layer1, layer2, layer3], dtype=np.float)
+        net_input = torch.stack([layer1, layer2, layer3], dim=0).to(device)
         with torch.no_grad():
-            input = torch.from_numpy(input).unsqueeze(0).to(device=device, dtype=torch.float32)
-            policy, value = self(input)
-            return policy[0,:].detach().cpu().numpy(), value[0,0].detach().cpu().numpy()
+            policy, value = self(net_input)
+            if device.type != 'cpu':
+                policy = policy.cpu()
+                value = value.cpu()
+            return policy[0,:].numpy(), value[0,0].numpy()
 
 
 def train_GomokuNet(model, optimizer, train_data, epochs, device, print_every=100):
@@ -113,13 +116,13 @@ def train_GomokuNet(model, optimizer, train_data, epochs, device, print_every=10
             last_move = last_move_data[iter_idx[data_used : data_used + data_num]]
             p = torch.Tensor(p_data[iter_idx[data_used : data_used + data_num]])
             z = torch.Tensor(z_data[iter_idx[data_used : data_used + data_num]])
-            input = get_input_tensor(board, last_move, model.color)    
+            net_input = get_input_tensor(board, last_move)
             
-            input = input.to(device=device, dtype=torch.float32)
+            net_input = net_input.to(device=device, dtype=torch.float32)
             p = p.to(device=device, dtype=torch.float32)
             z = z.to(device=device, dtype=torch.float32)
             
-            policy, value = model(input)
+            policy, value = model(net_input)
             loss = torch.mean((value - z) ** 2) - torch.mean(torch.sum(p * torch.log(policy + 1e-10), dim=1))
             optimizer.zero_grad()
             loss.backward()
@@ -134,12 +137,13 @@ def train_GomokuNet(model, optimizer, train_data, epochs, device, print_every=10
     return loss_sum / epochs
 
 
-def get_input_tensor(board, last_move, color):
+def get_input_tensor(board, last_move):
     res = []
     for tempboard, tempmove in zip(board, last_move):
         tempinput = []
-        tempinput.append(np.array(np.array(tempboard) == color, dtype=np.float).reshape(15, 15))
-        tempinput.append(np.array(np.array(tempboard) == -color, dtype=np.float).reshape(15, 15))
+        # 1 represent now player
+        tempinput.append(np.array(np.array(tempboard) == 1, dtype=np.float).reshape(15, 15))
+        tempinput.append(np.array(np.array(tempboard) == -1, dtype=np.float).reshape(15, 15))
         templ = np.zeros((15, 15))
         if tempmove is not None:
             templ[tempmove // 15, tempmove % 15] = 1

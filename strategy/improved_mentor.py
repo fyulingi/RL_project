@@ -1,4 +1,5 @@
 import numpy as np
+from utils import get_search_field
 
 
 class State():
@@ -237,20 +238,6 @@ class ImMentorai():
                         res += '1'
         return res
 
-    def get_search_field(self, board):
-        way = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-        res = []
-        for pos in range(225):
-            if board[pos] == 0:
-                continue
-            i, j = pos // 15, pos % 15
-            for d in way:
-                temp = 15 * (i + d[0]) + j + d[1]
-                if 0 <= i + d[0] < 15 and 0 <= j + d[1] < 15 and board[temp] == 0:
-                    if temp not in res:
-                        res.append(temp)
-        return res
-
     def get_board_state(self, board, color):
         state = State([0] * 12)
         for i in range(15):
@@ -291,7 +278,7 @@ class ImMentorai():
             return -tempstate.score(), None
         else:
             best_move = None
-            search_list = self.get_search_field(board)
+            search_list = get_search_field(board)
             if len(search_list) > expand_num:
                 prune_scores = []
                 for action in search_list:

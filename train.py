@@ -1,9 +1,7 @@
-from model import *
 from dataset import *
 from agent import *
 import torch
 import torch.optim as optim
-from utils import printboard
 
 
 def train_net(color, netpath, version, datapath, epochs, device, savepath):

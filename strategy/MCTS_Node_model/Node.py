@@ -28,13 +28,6 @@ class Node:
         UCB_list = np.array([child.compute_UCB(c_puct) for child in self.children])
         best_action = np.argmax(UCB_list)
         return self.children[best_action], best_action
-        # sorted_idx = np.argsort(UCB_list)
-        # for i in reversed(range(len(sorted_idx))):
-            # if legal_moves[sorted_idx[i]]:
-            #     action = sorted_idx[i]
-            #     print("In Node::select, action = ", action)
-            #     return self.children[action], action
-        # return None, -1
 
     def expand(self, p_prior, legal_moves):
         """
@@ -43,24 +36,8 @@ class Node:
         p_prior: 225-d vector, prior probabilities to choose each move
         """
         assert not self.is_end and not self.children
-        for move in range(225):
-            if legal_moves[move]:
-                self.children.append(Node(p_prior[move], self, -self.color, move))
-
-    def backup(self, value, gamma, use_virtual=False):
-        """
-        Parameters:
-        -----------
-        value: float, value for backup (to what extend the temp color temds to win)
-        gamma: float, discount factor of the reward
-        """
-        if use_virtual and self.select_num > 0:
-            self.select_num -= 1
-            self.N -= 10
-            if self.N < 0:
-                self.N += 10
-        self.N += 1
-        self.W += value
-        self.Q = self.W / self.N
-        if self.parent is not None:
-            self.parent.backup(-gamma * value, gamma, use_virtual)  # switch sign because of the switch of color
+        p_sum = 0.0
+        for move in legal_moves:
+            p_sum += p_prior[move]
+        for move in legal_moves:
+            self.children.append(Node(p_prior[move] / p_sum, self, -self.color, move))

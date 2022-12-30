@@ -1,12 +1,12 @@
-import time
-import threading
 import numpy as np
-from utils import check_result
-from strategy.Node import Node
+from strategy.MCTS_Node_model.model import GomokuNet
+from utils import check_result, get_search_field
+from strategy.MCTS_Node_model.Node import Node
+
 
 
 class MCTS:
-    def __init__(self, config, black_net, white_net, color, board):
+    def __init__(self, config, net: GomokuNet, color, board):
         """
         Parameters:
         -----------
@@ -22,12 +22,9 @@ class MCTS:
         self.simulation_times = config['simulation_times']
         self.tau_init = config['tau_init']    # initial temperature
         self.tau_decay = config['tau_decay']
-        self.self_play = config['self_play']    # whether play with itself or another agent
         self.gamma = config['gamma']
         self.num_threads = config['num_threads']
-        # todo: 我觉得两个网络没有道理
-        self.black_net = black_net
-        self.white_net = white_net
+        self.net = net
         self.color = color
         self.stochastic_steps = config['stochastic_steps']
         self._expanding_list = []
@@ -62,7 +59,7 @@ class MCTS:
 
     def simulation_one_game(self):
         board = np.copy(self.board)
-        legal_moves = (board==0)
+        legal_moves = (board == 0)
         node = self.root
         while node.children != [] and check_result(board, node.move//15, node.move%15) == "unfinished":
             node, _ = node.select(self.c_puct)
@@ -71,23 +68,23 @@ class MCTS:
             legal_moves[node.move] = False
         if check_result(board, node.move//15, node.move%15) != "unfinished":
             node.is_end = True
-            node.backup(node.Q, self.gamma)
+            self.backup(node, node.Q, self.gamma)
             return
         game_result = check_result(board, node.move//15, node.move%15)
         if game_result == "draw":
-            node.backup(0, self.gamma)
+            self.backup(node, 0, self.gamma)
         elif (game_result == "blackwin" and self.color == 1) or (game_result == "whitewin" and self.color == -1):
-            node.backup(1, self.gamma)
+            self.backup(node, 1, self.gamma)
         elif game_result == "unfinished":
+            search_field = get_search_field(board)
             p_prior, v = self.get_p_prior_v(board, -node.color, node.move)
-            node.backup(v, self.gamma)
-            node.expand(p_prior, legal_moves)
+            self.backup(node, v, self.gamma)
+            node.expand(p_prior, search_field)
         else:  # the color of an ended node must have lost the game
-            node.backup(-1, self.gamma)
+            self.backup(node, -1, self.gamma)
 
     def get_p_prior_v(self, board, color, last_move):
-        net = self.black_net if color == 1 else self.white_net
-        p_prior, v = net.predict(board, last_move)
+        p_prior, v = self.net.predict(board, last_move, color)
         return p_prior, v
 
     def simulate(self, num_steps):
@@ -107,13 +104,14 @@ class MCTS:
             return 7, 7, None
         self.simulate(self.simulation_times)    # simulate
         N_list = np.array([child.N * 1.0 for child in self.root.children])
+        move_list = [child.move for child in self.root.children]
         if stage > self.stochastic_steps:    # determininstic policy
             action = self.root.children[np.argmax(N_list)].move
         else:    # stochastic policy
             tau = max(self.tau_init * (self.tau_decay ** (stage // 2)), 0.04)
             pi = N_list ** (1 / tau)
             pi /= np.sum(pi)
-            action = self.root.children[np.random.choice([i for i in range(len(self.root.children))], p=pi)].move
+            action = np.random.choice(move_list, p=pi)
         N_list /= np.sum(N_list)    # for training use
         return action//15, action%15, N_list
 
@@ -183,3 +181,12 @@ class MCTS:
     #         time.sleep(1e-3)
     #     for thr in thread_list:
     #         thr.join()
+
+    def backup(self, node, value, gamma):
+        # todo: N += 1 可能不需要
+        while node != self.root:
+            node.N += 1
+            node.W += value
+            node.Q = node.W / node.N
+            value = -value * gamma
+            node = node.parent
