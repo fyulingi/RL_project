@@ -197,11 +197,11 @@ class Generator:
             self.insert_record(board, last_move, pi, 1)
 
     def gen_4_attack_data(self, sample_num):
-        print("Begin to generate 4 oo_o attack data......")
-        self.generate_4_oooo_attack(sample_num)
         print("Begin to generate 4 oooo attack data......")
+        self.generate_4_oooo_attack(sample_num)
+        print("Begin to generate 4 oo_oo attack data......")
         self.generate_4_oo_oo_attack(sample_num)
-        print("Begin to generate 4 ooo attack data......")
+        print("Begin to generate 4 ooo_o attack data......")
         self.generate_4_ooo_o_attack(sample_num)
 
     def generate_4_oooo_defend(self, sample_num):
@@ -247,9 +247,9 @@ class Generator:
     def gen_4_defend_data(self, sample_num):
         print("Begin to generate 4 oooo defend data......")
         self.generate_4_oooo_defend(sample_num)
-        print("Begin to generate 4 oooo attack data......")
+        print("Begin to generate 4 oo_oo defend data......")
         self.generate_4_oo_oo_defend(sample_num)
-        print("Begin to generate 4 ooo attack data......")
+        print("Begin to generate 4 ooo_o defend data......")
         self.generate_4_ooo_o_defend(sample_num)
 
     def augment_data(self, board, last_move, p, z):
