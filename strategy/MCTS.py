@@ -29,18 +29,18 @@ class MCTS:
         self.stochastic_steps = config['stochastic_steps']
         self._expanding_list = []
 
-    def expand_one_node_determined(self, node, x, y):
-        new_node = Node(1, node, -node.color, x*15+y)
+    def expand_one_node_determined(self, node, action):
+        new_node = Node(1, node, -node.color, action)
         node.children.append(new_node)
 
-    def move_one_step(self, x, y):
+    def move_one_step(self, action):
         if len(self.root.children) == 0:
-            self.expand_one_node_determined(self.root, x, y)
+            self.expand_one_node_determined(self.root, action)
         for child in self.root.children:
-            if child.move == x*15+y:
+            if child.move == action:
                 self.root = child
                 self.root.N += 1
-                self.last_move = x*15+y
+                self.last_move = action
                 return
         raise RuntimeError("Invalid move.")
 
@@ -61,16 +61,12 @@ class MCTS:
         board = np.copy(self.board)
         legal_moves = (board == 0)
         node = self.root
-        while node.children != [] and check_result(board, node.move//15, node.move%15) == "unfinished":
+        while node.children != [] and check_result(board, node.move) == "unfinished":
             node, _ = node.select(self.c_puct)
             node.N += 1
             board[node.move] = node.color
             legal_moves[node.move] = False
-        if check_result(board, node.move//15, node.move%15) != "unfinished":
-            node.is_end = True
-            self.backup(node, node.Q, self.gamma)
-            return
-        game_result = check_result(board, node.move//15, node.move%15)
+        game_result = check_result(board, node.move)
         if game_result == "draw":
             self.backup(node, 0, self.gamma)
         elif (game_result == "blackwin" and self.color == 1) or (game_result == "whitewin" and self.color == -1):
@@ -85,7 +81,7 @@ class MCTS:
 
     def get_p_prior_v(self, board, color, last_move):
         p_prior, v = self.net.predict(board, last_move, color)
-        return p_prior, v
+        return p_prior[0].cpu(), v[0][0].cpu()
 
     def simulate(self, num_steps):
         if self.num_threads == 1:
@@ -98,10 +94,19 @@ class MCTS:
         # else:
         #     raise RuntimeError(f"Invalid thread number: {self.num_threads}.")
 
+    def get_move_pi(self, move_list, N_list):
+        pi = np.zeros(225)
+        for move, N in zip(move_list, N_list):
+            pi[move] = N
+        pi = pi / np.sum(pi)
+        return pi
+
     def action(self):
         stage = np.sum(np.abs(self.board)) + 1
         if stage == 1:
-            return 7, 7, None
+            pi = np.zeros(225)
+            pi[112] = 1
+            return 112, pi
         self.simulate(self.simulation_times)    # simulate
         N_list = np.array([child.N * 1.0 for child in self.root.children])
         move_list = [child.move for child in self.root.children]
@@ -113,7 +118,8 @@ class MCTS:
             pi /= np.sum(pi)
             action = np.random.choice(move_list, p=pi)
         N_list /= np.sum(N_list)    # for training use
-        return action//15, action%15, N_list
+        pi = self.get_move_pi(move_list, N_list)
+        return action, pi
 
     def update(self, action):
         self.root = self.root.children[action]

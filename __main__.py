@@ -8,6 +8,7 @@ from strategy import mentor
 from strategy import MCTS
 from agent import MCTSAgent
 import torch
+import config
 
 SIZE = 15
 
@@ -49,12 +50,11 @@ if __name__ == '__main__':
     # todo: if run on botzone, please upload models to "管理存储空间",
     #     and change `model_path` to '/data/models'
     # model_path = os.getcwd()+'/./models'
-    model_path = '/data/models'
+    model_path = '/data'
     # print(model_path)
-    mcts_config = {'c_puct': 5, 'simulation_times': 100, 'tau_init': 1, 'tau_decay': 0.8,
-                   'gamma': 0.95, 'num_threads': 1, 'stochastic_steps': 0}
-    model_config = {'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32,
-                    'path': model_path, 'version': 0, 'device': torch.device('cpu')}
-    ai_mcts = MCTSAgent(mcts_config, model_config, color, board)
-    x, y = ai_mcts.next_action()
-    print(json.dumps({"response": {"x": x, "y": y}}))
+
+    mcts_config = config.get_mcts_config("test")
+    model_config = config.get_model_config("compete", model_path, 2)
+    ai_mcts = MCTSAgent(color, board, mcts_config, model_config)
+    action = ai_mcts.next_action()
+    print(json.dumps({"response": {"x": action//15, "y": action%15}}))

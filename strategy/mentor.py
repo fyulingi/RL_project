@@ -57,7 +57,7 @@ class Mentorai():
 
     def action(self, degree=3):
         if np.sum(np.abs(self.board)) == 0:
-            return 112//15, 112%15
+            return 112
         search_field = np.array(get_search_field(self.board))
         scores = np.array([self.compute_score(pos) for pos in search_field])
         best_score = np.max(scores)
@@ -65,4 +65,4 @@ class Mentorai():
         best_idx = np.argsort(scores)[::-1]
         degree = max(min(degree, good_moves, len(scores)),1)
         next_id = np.random.choice(search_field[best_idx[:degree]])
-        return int(next_id//15), int(next_id%15)
+        return next_id

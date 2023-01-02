@@ -1,7 +1,9 @@
 import os
 import numpy as np
-import agent
 import torch
+
+import agent
+import config
 from utils import printboard
 from utils import check_result
 
@@ -13,10 +15,10 @@ def init_state(board, player1, player2):
     player2.reset()
 
 
-def move_one_step(color, x, y, board, actor1, actor2):
-    actor1.move_one_step(x, y, color)
-    actor2.move_one_step(x, y, color)
-    board[x * 15 + y] = color
+def move_one_step(color, action, board, actor1, actor2):
+    actor1.move_one_step(action, color)
+    actor2.move_one_step(action, color)
+    board[action] = color
 
 
 def play_one_game(board, actor1:agent, actor2):
@@ -24,14 +26,14 @@ def play_one_game(board, actor1:agent, actor2):
     turn = 0
     while game_result == "unfinished":
         if turn % 2 == 0:
-            x, y = actor1.next_action()
-            move_one_step(1, x, y, board, actor1, actor2)
+            action = actor1.next_action()
+            move_one_step(1, action, board, actor1, actor2)
             # print(f"black: {x}, {y}")
         else:
-            x, y = actor2.next_action()
-            move_one_step(-1, x, y, board, actor1, actor2)
+            action = actor2.next_action()
+            move_one_step(-1, action, board, actor1, actor2)
             # print(f"white: {x}, {y}")
-        game_result = check_result(board, x, y)
+        game_result = check_result(board, action)
         turn += 1
     return game_result, turn
 
@@ -58,32 +60,23 @@ def mentor_mentor(plays_num):
     two_players_play(board, player1, player2, plays_num)
 
 
-def mentor_MCTS(plays_num):
+def mentor_MCTS(model_config, plays_num):
     board = np.zeros([225])
-    model_path = os.getcwd() + '/./models'
-    mcts_config = {'c_puct': 5, 'simulation_times': 100, 'tau_init': 1, 'tau_decay': 0.8,
-                   'gamma': 0.95, 'num_threads': 1, 'stochastic_steps': 0}
-    model_config = {'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32,
-                    'path': model_path, 'version': 0, 'device': torch.device('cpu')}
+    mcts_config = config.get_mcts_config('test')
     player1 = agent.MentorAgent(1, board)
-    player2 = agent.MCTSAgent(mcts_config, model_config, -1, board)
+    player2 = agent.MCTSAgent(-1, board, mcts_config, model_config)
     two_players_play(board, player1, player2, plays_num)
 
-    player1 = agent.MCTSAgent(mcts_config, model_config, 1, board)
+    player1 = agent.MCTSAgent(1, board, mcts_config, model_config)
     player2 = agent.MentorAgent(-1, board)
     two_players_play(board, player1, player2, plays_num)
 
 
-def MCTS_MCTS(plays_num):
+def MCTS_MCTS(model_config, plays_num):
     board = np.zeros([225])
-    model_path = os.getcwd() + '/./models'
-    mcts_config = {'c_puct': 5, 'simulation_times': 100, 'tau_init': 1, 'tau_decay': 0.8,
-                   'gamma': 0.95, 'num_threads': 1, 'stochastic_steps': 0}
-    model_config = {'learning_rate': 2e-3, 'momentum': 9e-1, 'l2': 1e-4, 'batch_size': 32,
-                    'path': model_path, 'version': 0, 'device': torch.device('cpu')}
-    print("model path: ", model_path)
-    player1 = agent.MCTSAgent(mcts_config, model_config, 1, board)
-    player2 = agent.MCTSAgent(mcts_config, model_config, -1, board)
+    mcts_config = config.get_mcts_config('test')
+    player1 = agent.MCTSAgent(1, board, mcts_config, model_config)
+    player2 = agent.MCTSAgent(-1, board, mcts_config, model_config)
     two_players_play(board, player1, player2, plays_num)
 
 
@@ -97,8 +90,10 @@ def mentor_imporvedmentor(plays_num):
     player2 = agent.MentorAgent(-1, board)
     two_players_play(board, player1, player2, plays_num)
 
+
 if __name__ == '__main__':
     # mentor_mentor(50)
-    # mentor_MCTS(50)
-    # MCTS_MCTS(50)
+    model_config = config.get_model_config('test', )
+    mentor_MCTS(os.getcwd() + '/./models', 0, torch.device('cpu'), 50)
+    # MCTS_MCTS(os.getcwd() + '/./models', 0, torch.device('cpu'), 50)
     mentor_imporvedmentor(10)

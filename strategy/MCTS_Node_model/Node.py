@@ -24,7 +24,7 @@ class Node:
         return -self.Q + (c_puct * self.P * sqrt(self.parent.N) / (1 + self.N) if self.parent is not None else 0)
 
     def select(self, c_puct):
-        assert not self.is_end and self.children
+        assert not self.is_end and len(self.children) > 0
         UCB_list = np.array([child.compute_UCB(c_puct) for child in self.children])
         best_action = np.argmax(UCB_list)
         return self.children[best_action], best_action
@@ -35,9 +35,9 @@ class Node:
         -----------
         p_prior: 225-d vector, prior probabilities to choose each move
         """
-        assert not self.is_end and not self.children
-        p_sum = 0.0
+        assert not self.is_end and len(self.children) == 0
+        p_sum = 1e-10
         for move in legal_moves:
-            p_sum += p_prior[move]
+            p_sum += p_prior[move].item()
         for move in legal_moves:
-            self.children.append(Node(p_prior[move] / p_sum, self, -self.color, move))
+            self.children.append(Node(p_prior[move].item() / p_sum, self, -self.color, move))

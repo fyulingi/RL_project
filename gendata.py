@@ -1,13 +1,17 @@
+import os
 import sys
 from tqdm import tqdm
 import numpy as np
 import torch
 
+import utils
+from dataset import Dataset
+
 
 class Generator:
-    def __init__(self, max_noise_stone_num):
+    def __init__(self, path, max_noise_stone_num):
         self.max_noise_stone_num = max_noise_stone_num
-        self.board_record, self.last_move_record, self.p_record, self.z_record = [], [], [], []
+        self.dataset = Dataset(path, "write")
 
     def _generate_consecutive_line(self, consecutive_num):
         start_pos = np.random.randint(0, 15, 2)
@@ -77,11 +81,8 @@ class Generator:
             raise ValueError("type must be attack or defend")
         return last_move
 
-    def insert_record(self, board, last_move, p, z):
-        self.board_record.append(board)
-        self.last_move_record.append(last_move)
-        self.p_record.append(p)
-        self.z_record.append(z)
+    def insert_record(self, board, last_move, p, z, color=1):
+        self.dataset.append(board, last_move, p, z, color)
 
     def generate_3_ooo_attack(self, sample_num):
         for _ in tqdm(range(sample_num), file=sys.stdout):
@@ -252,57 +253,18 @@ class Generator:
         print("Begin to generate 4 ooo_o defend data......")
         self.generate_4_ooo_o_defend(sample_num)
 
-    def augment_data(self, board, last_move, p, z):
-        # 3 rotation, 3 flip
-        augment_mode = np.random.randint(0, 6)
-        x, y = last_move // 15, last_move % 15
-        if augment_mode < 3:
-            while augment_mode >= 0:
-                board = np.rot90(board.reshape(15, 15)).reshape(225)
-                last_move = (7 + (7 - y)) * 15 + (7 + (x - 7))
-                p = np.rot90(p.reshape(15, 15)).reshape(225)
-                augment_mode -= 1
-        else:
-            augment_mode -= 3
-            while augment_mode >= 0:
-                if augment_mode%2 == 0:
-                    board = np.flipud(board.reshape(15, 15)).reshape(225)
-                    last_move = (7 + (7 - x)) * 15 + y
-                    p = np.flipud(p.reshape(15, 15)).reshape(225)
-                else:
-                    board = np.fliplr(board.reshape(15, 15)).reshape(225)
-                    last_move = x * 15 + (7 + (7 - y))
-                    p = np.fliplr(p.reshape(15, 15)).reshape(225)
-                augment_mode -= 1
-        return board, last_move, p, z
-
-    def add_augment_data(self, augment_data_pro):
-        sample_index = np.random.randint(0, len(self.board_record), int(len(self.board_record) * augment_data_pro))
-        print("Begin to add augment data......")
-        for index in tqdm(range(len(sample_index)), file=sys.stdout):
-            i = sample_index[index]
-            board = self.board_record[i]
-            last_move = self.last_move_record[i]
-            p = self.p_record[i]
-            z = self.z_record[i]
-            board_aug, last_move_aug, p_aug, z_aug = self.augment_data(board, last_move, p, z)
-            self.insert_record(board_aug, last_move_aug, p_aug, z_aug)
-
     def generate_train_data(self, sample_num, augment_data_pro):
         self.gen_3_defend_data(sample_num)
         self.gen_3_attack_data(sample_num)
         self.gen_4_defend_data(sample_num)
         self.gen_4_attack_data(sample_num)
-        self.add_augment_data(augment_data_pro)
+        self.dataset.add_augment_data(augment_data_pro)
 
-    def save_train_data(self, path):
-        torch.save(np.array(self.board_record), path + '/board_record')
-        torch.save(np.array(self.last_move_record), path + '/last_move_record')
-        torch.save(np.array(self.p_record), path + '/p_record')
-        torch.save(np.array(self.z_record), path + '/z_record')
+    def save_train_data(self):
+        self.dataset.save()
 
 
 if __name__ == '__main__':
-    data_generator = Generator(2)
-    data_generator.generate_train_data(5000, 0.2)
-    data_generator.save_train_data('./gamedata/enhanced')
+    data_generator = Generator('./game_data/gen_data', 7)
+    data_generator.generate_train_data(10000, 0.3)
+    data_generator.save_train_data()

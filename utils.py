@@ -32,10 +32,11 @@ def count_dir_num(board, color, x, y, x_dir, y_dir):
     return res
 
 
-def check_result(board, last_x, last_y):
+def check_result(board, last_move):
+    last_x, last_y = last_move // 15, last_move % 15
     if last_x < 0 or last_y < 0:
         return "unfinished"
-    color = board[last_x*15+last_y]
+    color = board[last_move]
     win_mess = "blackwin" if color == 1 else "whitewin"
     # left, right, up, down, leftup, rightdown, leftdown, rightup
     x_dir = [0, 0, -1, 1, -1, 1, 1, -1]
