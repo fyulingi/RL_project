@@ -10,15 +10,8 @@ from compete import move_one_step
 
 
 def get_loss(model, net_input, p, z):
-    # print(f"net_input shape: {net_input.shape}")
     p_hat, z_hat = model(net_input)
-    # print("p hat shape: ", p_hat.shape)
-    # print("z hat shape: ", z_hat.shape)
-    # print("p shape: ", p.shape)
-    # print("z shape: ", z.shape)
     loss = -torch.mean(p_hat.mul(torch.log(p+1e-10))) + torch.mean((z_hat - z) ** 2)
-    # print(f"loss: {loss}")
-    # print("loss shape: ", loss.shape)
     return loss
 
 
@@ -70,6 +63,7 @@ def gen_mentor_mcts_data(model, rounds, mu, version):
     black_num, white_num = get_black_white_round_num(rounds)
     mcts_config = config.get_mcts_config("train")
     dataset = Dataset(f"./game_data/with_mentor/{version}", "write")
+    turns = 0
     for black_round in range(black_num):
         board = np.zeros(225)
         actor1 = MCTSAgent(1, board, mcts_config, None, model)
@@ -95,6 +89,7 @@ def gen_mentor_mcts_data(model, rounds, mu, version):
             zs.append(mu * zs[-1])
         zs = zs[::-1]
         dataset.extend(boards, last_moves, ps, zs, colors)
+        turns += turn
     for white_round in range(white_num):
         board = np.zeros(225)
         actor1 = MentorAgent(1, board)
@@ -102,7 +97,7 @@ def gen_mentor_mcts_data(model, rounds, mu, version):
         boards, last_moves, ps, zs, colors = [], [], [], [], []
         last_move = -1
         turn = 0
-        while check_result(board, last_move) != "unfinished":
+        while check_result(board, last_move) == "unfinished":
             if turn % 2 == 0:
                 last_move = actor1.next_action()
                 move_one_step(1, last_move, board, actor1, actor2)
@@ -115,13 +110,16 @@ def gen_mentor_mcts_data(model, rounds, mu, version):
                 colors.append(-1)
                 move_one_step(-1, last_move, board, actor1, actor2)
                 # print(f"white: {x}, {y}")
+            turn += 1
         reward = get_reward_by_result(check_result(board, last_move), -1)
         zs.append(reward)
         while len(zs) < len(boards):
             zs.append(mu * zs[-1])
         zs = zs[::-1]
         dataset.extend(boards, last_moves, ps, zs, colors)
+        turns += turn
     dataset.save()
+    print(f"average turns: {turns / rounds}")
     return dataset
 
 
@@ -140,6 +138,7 @@ def gen_self_play_data(model, rounds, mu, version):
     black_num, white_num = get_black_white_round_num(rounds)
     mcts_config = config.get_mcts_config('train')
     dataset = Dataset(f"./game_data/self_play/{version}", "write")
+    turns = 0
     for black_round in range(black_num):
         board = np.zeros(225)
         actor1 = MCTSAgent(1, board, mcts_config, None, model)
@@ -167,6 +166,7 @@ def gen_self_play_data(model, rounds, mu, version):
             zs.append(mu * zs[-1])
         zs = zs[::-1]
         dataset.extend(boards, last_moves, ps, zs, colors)
+        turns += turn
     for white_round in range(white_num):
         board = np.zeros(225)
         actor1 = MCTSAgent(1, board, mcts_config, None, model)
@@ -174,7 +174,7 @@ def gen_self_play_data(model, rounds, mu, version):
         boards, last_moves, ps, zs, colors = [], [], [], [], []
         last_move = -1
         turn = 0
-        while check_result(board, last_move) != "unfinished":
+        while check_result(board, last_move) == "unfinished":
             if turn % 2 == 0:
                 last_move = actor1.next_action()
                 move_one_step(1, last_move, board, actor1, actor2)
@@ -187,13 +187,16 @@ def gen_self_play_data(model, rounds, mu, version):
                 colors.append(-1)
                 move_one_step(-1, last_move, board, actor1, actor2)
                 # print(f"white: {x}, {y}")
+            turn += 1
         reward = get_reward_by_result(check_result(board, last_move), -1)
         zs.append(reward)
         while len(zs) < len(boards):
             zs.append(mu * zs[-1])
         zs = zs[::-1]
         dataset.extend(boards, last_moves, ps, zs, colors)
+        turns += turn
     dataset.save()
+    print(f"average turns: {turns / rounds}")
     return dataset
 
 
@@ -214,10 +217,10 @@ def train(mentor_play_round, self_play_rounds):
     train_on_gen_data(64, 120, device)
     for round in range(mentor_play_round):
         print(f"begin training on mentor play data, round {round + 1}......")
-        train_on_mentor_play(round, 64, 64, 100, device)
+        train_on_mentor_play(round, 32, 32, 240, device)
     for round in range(self_play_rounds):
         print(f"begin training on self play data, round {round + 1}......")
-        train_on_self_play(round, 64, 64, 100, device)
+        train_on_self_play(round, 32, 32, 240, device)
 
 
 if __name__ == "__main__":

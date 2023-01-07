@@ -3,7 +3,7 @@ def get_mcts_config(mode):
     mcts_config = {'c_puct': 5, 'tau_init': 1, 'tau_decay': 0.8,
                    'gamma': 0.95, 'num_threads': 1, 'stochastic_steps': 0}
     if mode == 'train':
-        mcts_config['simulation_times'] = 1000
+        mcts_config['simulation_times'] = 500
     elif mode == 'test':
         mcts_config['simulation_times'] = 200
     else:

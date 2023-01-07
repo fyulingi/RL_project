@@ -10,8 +10,6 @@ class MCTS:
         """
         Parameters:
         -----------
-        black_net: CNN model, evaluation model for black player
-        white_net: CNN model, evaluation model for white player
         color: -1 or +1, the color of the MCTS agent, +1 for black, -1 for white, only counts when not self-playing
         stochastic_steps: int, total stones played by stochastic methods, 0 for deterministic, >0 for stochastic (training only)
         """
@@ -50,32 +48,29 @@ class MCTS:
         for child in self.root.children:
             if child.move == action:
                 self.root = child
-                self.root.N += 1
                 return
         node = Node(1, None, -self.root.color, action)
         self.root = node
         self.root.parent = None
-        self.root.N += 1
 
     def simulation_one_game(self):
         board = np.copy(self.board)
-        legal_moves = (board == 0)
         node = self.root
-        while node.children != [] and check_result(board, node.move) == "unfinished":
-            node, _ = node.select(self.c_puct)
-            node.N += 1
-            board[node.move] = node.color
-            legal_moves[node.move] = False
+        while check_result(board, node.move) == "unfinished":
+            if node.children != []:
+                node, _ = node.select(self.c_puct)
+                board[node.move] = node.color
+            else:
+                search_field = get_search_field(board)
+                p_prior, v = self.get_p_prior_v(board, -node.color, node.move)
+                node.expand(p_prior, search_field)
+                node, _ = node.select(self.c_puct)
+                board[node.move] = node.color
         game_result = check_result(board, node.move)
         if game_result == "draw":
             self.backup(node, 0, self.gamma)
         elif (game_result == "blackwin" and self.color == 1) or (game_result == "whitewin" and self.color == -1):
             self.backup(node, 1, self.gamma)
-        elif game_result == "unfinished":
-            search_field = get_search_field(board)
-            p_prior, v = self.get_p_prior_v(board, -node.color, node.move)
-            self.backup(node, v, self.gamma)
-            node.expand(p_prior, search_field)
         else:  # the color of an ended node must have lost the game
             self.backup(node, -1, self.gamma)
 
@@ -87,12 +82,6 @@ class MCTS:
         if self.num_threads == 1:
             for step in range(num_steps):
                 self.simulation_one_game()
-                # self.simulate_one_step()
-                # print(f"{_ + 1} step finished.")
-        # elif self.num_threads > 1:
-        #     self.simulate_multi_threads(num_steps)
-        # else:
-        #     raise RuntimeError(f"Invalid thread number: {self.num_threads}.")
 
     def get_move_pi(self, move_list, N_list):
         pi = np.zeros(225)
@@ -130,67 +119,8 @@ class MCTS:
         self.root = Node(1.0, None, -self.color, -1)  # start from empty board
         self.last_move = None  # update the last move in the root board
 
-    #
-    # def _get_simulate_thread_target(self, num_steps, num_threads):
-    #     def _simulate_thread():
-    #         avg_steps = int(num_steps / num_threads)
-    #         for _ in range(avg_steps):
-    #             legal_moves = self.board == 0
-    #             node = self.root
-    #             color = node.color    # the color of the root node may be different when the board is empty
-    #             board = np.copy(self.board)
-    #             action = self.last_move
-    #             while node.children:    # select
-    #                 node, action = node.select(self.c_puct, legal_moves)
-    #                 node.select_num += 1
-    #                 node.N += 10    # virtual loss
-    #                 legal_moves[action] = False
-    #                 board[action] = color
-    #                 color = -color
-    #                 while node in self._expanding_list:
-    #                     time.sleep(1e-4)
-    #             if node.is_end:    # evaluated end node
-    #                 node.backup(node.Q, self.gamma, True)
-    #                 continue
-    #             if node not in self._expanding_list:
-    #                 self._expanding_list.append(node)
-    #             else:
-    #                 continue
-    #             if action is not None:    # if action is None, the node is not an end node
-    #                 game_result = check_result(board, action//15, action%15)    #### a function judging the game results, returning "blackwin", "whitewin", "draw", or "unfinished"
-    #                 if game_result != "unfinished":
-    #                     node.is_end = True
-    #                     if game_result == "draw":
-    #                         node.backup(0, self.gamma, True)
-    #                     else:
-    #                         node.backup(-1, self.gamma, True)    # the color of an ended node must have lost the game
-    #                     self._expanding_list.remove(node)
-    #                     continue
-    #             net = self.black_net if color == 1 else self.white_net    # evaluate for nonfinished node
-    #             p_prior, v = net.predict(    #### may change according to the net
-    #                 board=board,
-    #                 last_move=action
-    #             )
-    #             node.expand(p_prior)    # expand
-    #             node.backup(v, self.gamma, True)    # backup
-    #             self._expanding_list.remove(node)
-    #
-    #     return _simulate_thread
-    #
-    # def simulate_multi_threads(self, num_steps):
-    #     target = self._get_simulate_thread_target(num_steps, self.num_threads)
-    #     thread_list = []
-    #     for i in range(self.num_threads):
-    #         thr = threading.Thread(target=target, name=f"thread_{i + 1}")
-    #         thr.start()
-    #         thread_list.append(thr)
-    #         time.sleep(1e-3)
-    #     for thr in thread_list:
-    #         thr.join()
-
     def backup(self, node, value, gamma):
-        # todo: N += 1 可能不需要
-        while node != self.root:
+        while node != self.root.parent:
             node.N += 1
             node.W += value
             node.Q = node.W / node.N

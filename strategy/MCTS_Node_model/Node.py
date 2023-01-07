@@ -21,7 +21,7 @@ class Node:
         self.is_end = False
 
     def compute_UCB(self, c_puct):
-        return -self.Q + (c_puct * self.P * sqrt(self.parent.N) / (1 + self.N) if self.parent is not None else 0)
+        return self.Q + c_puct * self.P * sqrt(self.parent.N) / (1 + self.N)
 
     def select(self, c_puct):
         assert not self.is_end and len(self.children) > 0

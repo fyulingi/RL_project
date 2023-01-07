@@ -54,7 +54,7 @@ if __name__ == '__main__':
     # print(model_path)
 
     mcts_config = config.get_mcts_config("test")
-    model_config = config.get_model_config("compete", model_path, 2)
+    model_config = config.get_model_config("compete", model_path, 15)
     ai_mcts = MCTSAgent(color, board, mcts_config, model_config)
     action = ai_mcts.next_action()
     print(json.dumps({"response": {"x": action//15, "y": action%15}}))

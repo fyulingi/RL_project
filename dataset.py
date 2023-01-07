@@ -1,7 +1,7 @@
 import os
 import sys
 import numpy as np
-from tqdm import tqdm
+# from tqdm import tqdm
 import torch
 import torch.utils.data as Data
 
@@ -92,8 +92,8 @@ class Dataset(Data.Dataset):
     def add_augment_data(self, augment_data_pro):
         sample_index = np.random.randint(0, len(self.boards), int(len(self.boards) * augment_data_pro))
         print("Begin to add augment data......")
-        # for index in range(len(sample_index)):
-        for index in tqdm(range(len(sample_index)), file=sys.stdout):
+        for index in range(len(sample_index)):
+        # for index in tqdm(range(len(sample_index)), file=sys.stdout):
             i = sample_index[index]
             board_aug, last_move_aug, p_aug, z_aug, color = self.augment_data(i)
             self.append(board_aug, last_move_aug, p_aug, z_aug, color)
